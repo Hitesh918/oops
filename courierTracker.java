@@ -262,14 +262,7 @@ public class Main {
         return ans;
     }
     
-    // private static void exec(srcCode , destCode){
-    //     List<Integer> all_sources = findRoutesByPincode(srcCode, routes);
-    //     List<Integer> all_dest = findRoutesByPincode(destCode, routes);
-
-    // }
-
-    
-    public static void main(String[] args) {
+    public static void exec(int srcCode ,int destCode) {
         stop[] stopsArray1 = {new stop(0, "stop0", "15:00", "11:00", 4, 5, -1),
                               new stop(1, "stop1", "16:00", "10:00", 4, 5, 60),
                               new stop(2, "stop2", "17:00", "09:00", 4, 5, 60),
@@ -319,9 +312,6 @@ public class Main {
         
         Node[] links = {node1, node2, node3, node4};
         
-        int srcCode=10;
-        int destCode=3;
-        
         
         List<Integer> all_sources = findRoutesByPincode(srcCode, routes);
         List<Integer> all_dest = findRoutesByPincode(destCode, routes);
@@ -343,5 +333,10 @@ public class Main {
             System.out.println(findTimeTaken(srcCode , destCode , resultArray , routes));
         }
 
+    }
+    public static void main(String[] args){
+        int srcCode=10;
+        int destCode=3;
+        exec(srcCode , destCode);
     }
 }
