@@ -261,6 +261,12 @@ public class Main {
         
         return ans;
     }
+    
+    // private static void exec(srcCode , destCode){
+    //     List<Integer> all_sources = findRoutesByPincode(srcCode, routes);
+    //     List<Integer> all_dest = findRoutesByPincode(destCode, routes);
+
+    // }
 
     
     public static void main(String[] args) {
@@ -313,36 +319,29 @@ public class Main {
         
         Node[] links = {node1, node2, node3, node4};
         
-        int targetPincode = 11;
-        List<Integer> matchingRoutes = findRoutesByPincode(targetPincode, routes);
-
-        System.out.println("Routes containing pincode " + targetPincode + ": " + matchingRoutes);
+        int srcCode=10;
+        int destCode=3;
         
-        int startId = 4;
-        int endId = 1;
+        
+        List<Integer> all_sources = findRoutesByPincode(srcCode, routes);
+        List<Integer> all_dest = findRoutesByPincode(destCode, routes);
+        
+        Set<List<Integer>> uniqueResults = new HashSet<>();
 
-        List<List<Integer>> allRoutes = findAllRoutes(node1, startId, endId);
-
-        System.out.println("All possible routes from " + startId + " to " + endId + ":");
-        for (List<Integer> route : allRoutes) {
-            System.out.println(route);
+        for (int s : all_sources) {
+            for(int d : all_dest){
+                List<List<Integer>> results = findAllRoutes(node1 ,s, d);
+                uniqueResults.addAll(results);
+            }
         }
         
-        String startTime = "08:30";
-        int startDay = 6; 
-        String desiredTime = "05:45";
-        int desiredDay = 6; 
+        List<List<Integer>> resultList = new ArrayList<>(uniqueResults);
 
-        try {
-            int minutesUntilDesiredTime = calculateMinutesUntilDesiredTime(startTime, startDay, desiredTime, desiredDay);
-            System.out.println("Minutes until desired time: " + minutesUntilDesiredTime);
-        } catch (ParseException e) {
-            System.out.println("Error parsing time: " + e.getMessage());
+        for (List<Integer> result : resultList) {
+            int[] resultArray = result.stream().mapToInt(Integer::intValue).toArray();
+            System.out.println(result);
+            System.out.println(findTimeTaken(srcCode , destCode , resultArray , routes));
         }
-        
-        int [] idk = {3,4,1};
-        
-        System.out.println(findTimeTaken(10 , 3 , idk , routes) );
 
     }
 }
