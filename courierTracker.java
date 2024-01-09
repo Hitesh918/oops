@@ -3,6 +3,11 @@
 import java.util.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.DayOfWeek;
 
 /*
 mon-1
@@ -40,14 +45,19 @@ class Route {
     int uniqueId;
     int onEvery;
     int returnAfter;
-    stop s[];
-    public Route(int uniqueId, int onEvery, int returnAfter ,stop[] stops) {
+    stop stops[];
+    Map<Integer, Integer> links;
+
+    public Route(int uniqueId, int onEvery, int returnAfter ,stop[] stops ,Map<Integer, Integer> links) {
         this.uniqueId = uniqueId;
         this.onEvery = onEvery;
         this.returnAfter=returnAfter;
-        this.s = stops;
-    }
+        this.stops = stops;
+        this.links = links;
+
+    } 
 }
+
 class Node {
     static Node[] allNodes = new Node[5];
 
@@ -62,7 +72,7 @@ class Node {
 }
 
 
-public class courierTracker {
+public class Main {
     
     //function to return all routes in which given stop is present
     
@@ -70,7 +80,7 @@ public class courierTracker {
         List<Integer> matchingRoutes = new ArrayList<>();
 
         for (Route route : routes) {
-            for (stop stop : route.s) {
+            for (stop stop : route.stops) {
                 if (stop.pincode == targetPincode) {
                     matchingRoutes.add(route.uniqueId);
                     break;  
@@ -146,6 +156,81 @@ public class courierTracker {
 
         return calendar.getTimeInMillis();
     }
+    
+    private static int findObjectIndexByPincode(stop[] objects, int targetPincode) {
+        for (int i = 0; i < objects.length; i++) {
+            if (objects[i].pincode == targetPincode) {
+                return i; 
+            }
+        }
+        return -1; 
+    }
+    private static String formatAsHHmm(ZonedDateTime dateTime) {
+        // Format as "HH:mm"
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+        return dateTime.format(formatter);
+    }
+
+    public static int getDayOfWeekNumber(ZonedDateTime dateTime) {
+        // Get the day of the week as a number (Monday = 1, Tuesday = 2, ..., Sunday = 7)
+        DayOfWeek dayOfWeek = dateTime.getDayOfWeek();
+        return dayOfWeek.getValue();
+    }
+    public static ZonedDateTime incrementMinutes(ZonedDateTime dateTime, int minutes) {
+        // Increment the time by the given number of minutes
+        return dateTime.plusMinutes(minutes);
+    }
+    
+    private static ZonedDateTime findTimeTaken(int srcCode , int destCode , int [] arr , Route[] routes ){
+        ZoneId timeZone = ZoneId.of("Asia/Kolkata");
+        ZonedDateTime currentDateTime = ZonedDateTime.now(timeZone);
+        ZonedDateTime ans = currentDateTime.withSecond(0);
+        
+        for (int i = 0; i < arr.length - 1; i++){
+            Route presentRoute=routes[arr[i]-1];
+            // Node obj = links[arr[i]-1];
+            Map<Integer, Integer> obj = presentRoute.links;
+            
+            int tempSrc = srcCode;
+            int tempGoal = obj.get(arr[i+1]);
+            int courierIndex = findObjectIndexByPincode(presentRoute.stops , tempSrc);
+            int junctionIndex = findObjectIndexByPincode(presentRoute.stops , tempGoal);
+            
+            if(courierIndex < junctionIndex){
+                try{
+                    int x= calculateMinutesUntilDesiredTime(formatAsHHmm(ans) ,getDayOfWeekNumber(ans) , presentRoute.stops[courierIndex].idealTime, presentRoute.stops[courierIndex].onDay );
+                    ans = incrementMinutes(ans , x);
+                }
+                catch (ParseException e) {
+                    // Handle the exception, e.g., print an error message
+                    System.err.println("Error parsing time: " + e.getMessage());
+                }
+                for (int j = courierIndex + 1; j <= junctionIndex; j++){
+                    ans = incrementMinutes(ans ,presentRoute.stops[j].timeFromPrev);
+                }
+            }
+            else if (courierIndex > junctionIndex){
+                
+                try{
+                    int x=calculateMinutesUntilDesiredTime(formatAsHHmm(ans) ,getDayOfWeekNumber(ans) , presentRoute.stops[courierIndex].idealReturnTime, presentRoute.stops[courierIndex].returnDay);
+                    ans = incrementMinutes(ans , x);
+                }
+                catch (ParseException e) {
+                    // Handle the exception, e.g., print an error message
+                    System.err.println("Error parsing time: " + e.getMessage());
+                }
+                // ans = incrementMinutes(ans , calculateMinutesUntilDesiredTime(formatAsHHmm(ans) ,getDayOfWeekNumber(ans) , presentRoute.stops[courierIndex].idealReturnTime, presentRoute.stops[courierIndex].returnDay));
+                for (int j = courierIndex; j >= junctionIndex + 1; j--){
+                    ans = incrementMinutes(ans , presentRoute.stops[j].timeFromPrev);
+                }
+            }
+
+            srcCode = tempGoal;
+        }
+        
+        
+        return ans;
+    }
 
     
     public static void main(String[] args) {
@@ -155,33 +240,45 @@ public class courierTracker {
                               new stop(3, "stop3", "19:00", "07:00", 4, 5, 120),
                               new stop(4, "stop4", "20:00", "06:00", 4, 5, 60),
                               new stop(5, "stop5", "21:00", "05:00", 4, 5, 60)};
-        Route route1 = new Route(1, 4, 8 , stopsArray1);
+        Map<Integer, Integer> linksMap1 = new HashMap<>();
+        linksMap1.put(2, 4);
+        linksMap1.put(4, 2);
+        Route route1 = new Route(1, 4, 8 , stopsArray1 , linksMap1);
 
+        Map<Integer, Integer> linksMap2 = new HashMap<>();
+        linksMap2.put(1, 4);
+        linksMap2.put(4, 8);
         stop[] stopsArray2 = {new stop(6, "stop6", "20:20", "13:40", 5, 1, -1),
                               new stop(7, "stop7", "10:30", "23:30", 6, 0, 850),
                               new stop(8, "stop8", "12:00", "22:00", 6, 0, 90),
                               new stop(4, "stop4", "17:00", "17:00", 6, 0, 300)};
-        Route route2 = new Route(2, 5, 24 ,  stopsArray2);
+        Route route2 = new Route(2, 5, 24 ,  stopsArray2 , linksMap2);
 
         stop[] stopsArray3 = {new stop(9, "stop9", "12:00", "06:00", 4, 5, -1),
                               new stop(10, "stop10", "14:00", "04:00", 4, 5, 120),
                               new stop(11, "stop11", "15:00", "03:00", 4, 5, 60),
                               new stop(12, "stop12", "18:00", "00:00", 4, 5, 180),
                               new stop(13, "stop13", "20:00", "22:00", 4, 4, 120)};
-        Route route3 = new Route(3, 4 , 2 , stopsArray3);
+        Map<Integer, Integer> linksMap3 = new HashMap<>();
+        linksMap3.put(4,11);                              
+        Route route3 = new Route(3, 4 , 2 , stopsArray3 , linksMap3);
 
         stop[] stopsArray4 = {new stop(11, "stop11", "17:30", "06:30", 6, 0, -1),
                               new stop(8, "stop8", "18:00", "06:00", 6, 0, 30),
                               new stop(2, "stop2", "19:00", "05:00", 6, 0, 60),
                               new stop(14, "stop14", "21:00", "03:00", 6, 0, 120)};
-        Route route4 = new Route(4, 6 , 6 ,  stopsArray4);
-        
+        Map<Integer, Integer> linksMap4 = new HashMap<>();
+        linksMap4.put(1, 2);
+        linksMap4.put(2, 8);
+        linksMap4.put(3, 11);                              
+                              
+        Route route4 = new Route(4, 6 , 6 ,  stopsArray4,linksMap4);
         
         Node node1 = new Node(1, new int[]{2, 4});
         Node node2 = new Node(2, new int[]{1, 4});
         Node node3 = new Node(3, new int[]{4});
         Node node4 = new Node(4, new int[]{1, 2, 3});
-        
+
         Route[] routes = {route1, route2, route3, route4};
         
         Node[] links = {node1, node2, node3, node4};
@@ -212,6 +309,11 @@ public class courierTracker {
         } catch (ParseException e) {
             System.out.println("Error parsing time: " + e.getMessage());
         }
+        
+        int [] idk = {3,4,1};
+        
+        System.out.println(findTimeTaken(10 , 3 , idk , routes) );
+
 
     }
 }
