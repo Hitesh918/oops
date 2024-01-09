@@ -227,7 +227,37 @@ public class Main {
 
             srcCode = tempGoal;
         }
+        Route presentRoute=routes[arr[arr.length - 1]-1];
+        int srcIndex=findObjectIndexByPincode(presentRoute.stops , srcCode);
+        int destIndex=findObjectIndexByPincode(presentRoute.stops , destCode);
         
+        if (srcIndex < destIndex){
+            try{
+                int x=calculateMinutesUntilDesiredTime(formatAsHHmm(ans) ,getDayOfWeekNumber(ans) , presentRoute.stops[srcIndex].idealTime, presentRoute.stops[srcIndex].onDay);
+                ans = incrementMinutes(ans , x);                
+            }
+            catch (ParseException e) {
+                // Handle the exception, e.g., print an error message
+                System.err.println("Error parsing time: " + e.getMessage());
+            }
+            for (int i = srcIndex + 1; i <= destIndex; i++){
+                ans = incrementMinutes(ans ,presentRoute.stops[i].timeFromPrev);
+            }
+        }
+        else if (srcIndex > destIndex){
+            try{
+                int x=calculateMinutesUntilDesiredTime(formatAsHHmm(ans) ,getDayOfWeekNumber(ans) , presentRoute.stops[srcIndex].idealReturnTime, presentRoute.stops[srcIndex].returnDay);
+                ans = incrementMinutes(ans , x);                
+            }
+            catch (ParseException e) {
+                // Handle the exception, e.g., print an error message
+                System.err.println("Error parsing time: " + e.getMessage());
+            }  
+            for (int i = srcIndex; i >= destIndex + 1; i--){
+                ans = incrementMinutes(ans ,presentRoute.stops[i].timeFromPrev);
+            }
+        }
+
         
         return ans;
     }
@@ -313,7 +343,6 @@ public class Main {
         int [] idk = {3,4,1};
         
         System.out.println(findTimeTaken(10 , 3 , idk , routes) );
-
 
     }
 }
